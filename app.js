@@ -1,4 +1,5 @@
 const express = require('express');
+require('express-async-errors');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const config = require('./utils/config');
@@ -8,7 +9,10 @@ const blogRouter = require('./controllers/blogs');
 
 const app = express();
 
-const mongoUrl = config.MONGODB_URI;
+const mongoUrl = process.env.NODE_ENV === 'test'
+  ? config.TEST_MONGODB_URI
+  : config.MONGODB_URI;
+
 mongoose.set('strictQuery', false);
 mongoose
   .connect(mongoUrl)
