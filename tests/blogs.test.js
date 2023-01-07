@@ -63,6 +63,7 @@ beforeEach(async () => {
   const promiseArray = blogObjects.map((blog) => blog.save());
   await Promise.all(promiseArray);
 });
+
 describe('HTTP GET /api/blogs', () => {
   test('blogs are returned as json', async () => {
     await api
@@ -74,6 +75,13 @@ describe('HTTP GET /api/blogs', () => {
   test('returns the correct number of blogs', async () => {
     const response = await api.get('/api/blogs');
     expect(response.body).toHaveLength(initialBlogs.length);
+  });
+
+  test('there is a property called id in each blog', async () => {
+    const response = await api.get('/api/blogs');
+    response.body.forEach((blog) => {
+      expect(blog.id).toBeDefined();
+    });
   });
 });
 
