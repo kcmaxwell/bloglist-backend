@@ -6,16 +6,19 @@ blogRouter.get('/', async (request, response) => {
   response.json(blogs);
 });
 
-blogRouter.post('/', (request, response) => {
+blogRouter.post('/', async (request, response) => {
   console.log(request.body);
 
-  const blog = new Blog(request.body);
+  // if title or url are missing, return with status 400 Bad Request
+  if (!Object.hasOwn(request.body, 'title') || !Object.hasOwn(request.body, 'url')) { response.status(400).end(); } else {
+    // if likes was not provided, set likes to 0
+    if (!Object.hasOwn(request.body, 'likes')) { request.body.likes = 0; }
 
-  blog
-    .save()
-    .then((result) => {
-      response.status(201).json(result);
-    });
+    const blog = new Blog(request.body);
+    const result = await blog.save();
+
+    response.status(201).json(result);
+  }
 });
 
 module.exports = blogRouter;

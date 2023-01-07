@@ -85,6 +85,66 @@ describe('HTTP GET /api/blogs', () => {
   });
 });
 
+describe('HTTP POST /api/blogs', () => {
+  test('successfully creates a new blog post', async () => {
+    const newBlog = {
+      title: 'New blog',
+      author: 'Kristopher Maxwell',
+      url: 'http://newblog.com',
+      likes: 6,
+    };
+
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .expect(201)
+      .expect('Content-Type', /application\/json/);
+
+    const response = await api.get('/api/blogs');
+    const blogsNoId = response.body.map((blog) => {
+      const { id, ...obj } = blog;
+      return obj;
+    });
+
+    expect(response.body).toHaveLength(initialBlogs.length + 1);
+    expect(blogsNoId).toContainEqual(newBlog);
+  });
+
+  test('defaults likes to 0 if not provided', async () => {
+    const newBlogNoLikes = {
+      title: 'New blog',
+      author: 'Kristopher Maxwell',
+      url: 'http://newblog.com',
+    };
+
+    await api
+      .post('/api/blogs')
+      .send(newBlogNoLikes)
+      .expect(201)
+      .expect('Content-Type', /application\/json/);
+
+    const response = await api.get('/api/blogs');
+    const blogsNoId = response.body.map((blog) => {
+      const { id, ...obj } = blog;
+      return obj;
+    });
+
+    expect(blogsNoId).toContainEqual({ ...newBlogNoLikes, likes: 0 });
+  });
+
+  test('if title or url are missing, respond with 400 Bad Request', async () => {
+    const badBlog = {
+      author: 'Kristopher Maxwell',
+      likes: 10,
+    };
+
+    await api
+      .post('/api/blogs')
+      .send(badBlog)
+      .expect(400);
+  });
+});
+
 afterAll(() => {
   mongoose.connection.close();
 });
