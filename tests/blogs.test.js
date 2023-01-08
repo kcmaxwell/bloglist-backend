@@ -148,3 +148,47 @@ describe('HTTP POST /api/blogs', () => {
 afterAll(() => {
   mongoose.connection.close();
 });
+
+describe('HTTP PUT /api/blogs/:id', () => {
+  test('successfully updates the given blog', async () => {
+
+  });
+
+  test('the length of the blogs list doesn\'t change', async () => {
+
+  });
+
+  test('if id is invalid, respond with 404', async () => {
+
+  });
+
+  test('if new blog info sent is invalid, respond with 400', async () => {
+
+  });
+});
+
+describe('HTTP DELETE /api/blogs/:id', () => {
+  test('successfully deletes the given blog and returns 204', async () => {
+    const { _id } = initialBlogs[0];
+
+    await api
+      .delete(`/api/blogs/${_id.toString()}`)
+      .expect(204);
+
+    const response = await api.get('/api/blogs');
+
+    expect(response.body).toHaveLength(initialBlogs.length - 1);
+  });
+
+  test('if id is invalid, change nothing and respond with 204', async () => {
+    const falseId = mongoose.Types.ObjectId();
+
+    await api
+      .delete(`/api/blogs/${falseId}`)
+      .expect(204);
+
+    const response = await api.get('/api/blogs');
+
+    expect(response.body).toHaveLength(initialBlogs.length);
+  });
+});
