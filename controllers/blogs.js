@@ -22,11 +22,22 @@ blogRouter.post('/', async (request, response) => {
 });
 
 blogRouter.put('/:id', async (request, response) => {
-  const blog = { ...request.body };
+  const exists = await Blog.exists({ _id: request.params.id });
 
-  const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, { new: true });
+  if (exists) {
+    // if title or url are missing, return with status 400 Bad Request
+    if (!Object.hasOwn(request.body, 'title') || !Object.hasOwn(request.body, 'url')) { response.status(400).end(); } else {
+    // if likes was not provided, set likes to 0
+      if (!Object.hasOwn(request.body, 'likes')) { request.body.likes = 0; }
 
-  response.json(updatedBlog);
+      const blog = request.body;
+      const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, { new: true });
+
+      response.json(updatedBlog);
+    }
+  } else {
+    response.status(404).end();
+  }
 });
 
 blogRouter.delete('/:id', async (request, response) => {

@@ -145,25 +145,58 @@ describe('HTTP POST /api/blogs', () => {
   });
 });
 
-afterAll(() => {
-  mongoose.connection.close();
-});
-
 describe('HTTP PUT /api/blogs/:id', () => {
   test('successfully updates the given blog', async () => {
+    const { _id } = initialBlogs[0];
 
-  });
+    const update = {
+      title: 'New Blog',
+      author: 'Kristopher Maxwell',
+      url: 'http://newblog.com',
+      likes: 20,
+    };
 
-  test('the length of the blogs list doesn\'t change', async () => {
+    const result = await api
+      .put(`/api/blogs/${_id.toString()}`)
+      .send(update)
+      .expect(200)
+      .expect('Content-Type', /application\/json/);
 
+    delete result.body.id;
+
+    expect(result.body).toEqual(JSON.parse(JSON.stringify(update)));
   });
 
   test('if id is invalid, respond with 404', async () => {
+    const falseId = new mongoose.Types.ObjectId();
 
+    const update = {
+      title: 'New Blog',
+      author: 'Kristopher Maxwell',
+      url: 'http://newblog.com',
+      likes: 20,
+    };
+
+    await api
+      .put(`/api/blogs/${falseId}`)
+      .send(update)
+      .expect(404);
   });
 
   test('if new blog info sent is invalid, respond with 400', async () => {
+    const { _id } = initialBlogs[0];
 
+    const update = {
+      title: 'New Blog',
+      author: 'Kristopher Maxwell',
+      likes: 20,
+      badAttribute: 'bad',
+    };
+
+    await api
+      .put(`/api/blogs/${_id.toString()}`)
+      .send(update)
+      .expect(400);
   });
 });
 
@@ -181,7 +214,7 @@ describe('HTTP DELETE /api/blogs/:id', () => {
   });
 
   test('if id is invalid, change nothing and respond with 204', async () => {
-    const falseId = mongoose.Types.ObjectId();
+    const falseId = new mongoose.Types.ObjectId();
 
     await api
       .delete(`/api/blogs/${falseId}`)
@@ -191,4 +224,8 @@ describe('HTTP DELETE /api/blogs/:id', () => {
 
     expect(response.body).toHaveLength(initialBlogs.length);
   });
+});
+
+afterAll(() => {
+  mongoose.connection.close();
 });
