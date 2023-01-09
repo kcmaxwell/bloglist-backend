@@ -4,7 +4,9 @@ const User = require('../models/user');
 const { usernameValid, passwordValid } = require('../utils/users_helper');
 
 usersRouter.get('/', async (request, response) => {
-  const users = await User.find({});
+  const users = await User
+    .find({})
+    .populate('blogs');
   response.json(users);
 });
 
