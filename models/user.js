@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -6,7 +7,7 @@ const userSchema = new mongoose.Schema({
     required: true,
     minlength: 3,
   },
-  passwordHash: {
+  password: {
     type: String,
     required: true,
   },
@@ -19,10 +20,18 @@ const userSchema = new mongoose.Schema({
   ],
 });
 
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) { next(); } else {
+    const saltRounds = 10;
+    this.password = await bcrypt.hash(this.password, saltRounds);
+    next();
+  }
+});
+
 userSchema.set('toJSON', {
   transform: (document, returnedObject) => {
     const {
-      _id, __v, passwordHash, ...obj
+      _id, __v, password, ...obj
     } = returnedObject;
     return { ...obj, id: _id.toString() };
   },

@@ -2,8 +2,15 @@ const mongoose = require('mongoose');
 const supertest = require('supertest');
 const app = require('../app');
 const Blog = require('../models/blog');
+const User = require('../models/user');
 
 const api = supertest(app);
+
+const loginUser = {
+  username: 'kcmaxwell',
+  password: 'password123',
+  name: 'Kristopher Maxwell',
+};
 
 const initialBlogs = [
   {
@@ -56,6 +63,21 @@ const initialBlogs = [
   },
 ];
 
+let token;
+
+beforeAll(async () => {
+  await User.deleteMany({});
+
+  const user = new User(loginUser);
+  await user.save();
+
+  const response = await api
+    .post('/api/login')
+    .send(loginUser);
+
+  token = response.body.token;
+});
+
 beforeEach(async () => {
   await Blog.deleteMany({});
 
@@ -96,13 +118,14 @@ describe('HTTP POST /api/blogs', () => {
 
     await api
       .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(newBlog)
       .expect(201)
       .expect('Content-Type', /application\/json/);
 
     const response = await api.get('/api/blogs');
     const blogsNoId = response.body.map((blog) => {
-      const { id, ...obj } = blog;
+      const { id, user, ...obj } = blog;
       return obj;
     });
 
@@ -119,13 +142,14 @@ describe('HTTP POST /api/blogs', () => {
 
     await api
       .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(newBlogNoLikes)
       .expect(201)
       .expect('Content-Type', /application\/json/);
 
     const response = await api.get('/api/blogs');
     const blogsNoId = response.body.map((blog) => {
-      const { id, ...obj } = blog;
+      const { id, user, ...obj } = blog;
       return obj;
     });
 
@@ -140,8 +164,23 @@ describe('HTTP POST /api/blogs', () => {
 
     await api
       .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(badBlog)
       .expect(400);
+  });
+
+  test('if a token is not provided, respond with 401 Unauthorized', async () => {
+    const newBlog = {
+      title: 'New blog',
+      author: 'Kristopher Maxwell',
+      url: 'http://newblog.com',
+      likes: 6,
+    };
+
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .expect(401);
   });
 });
 
@@ -201,16 +240,29 @@ describe('HTTP PUT /api/blogs/:id', () => {
 });
 
 describe('HTTP DELETE /api/blogs/:id', () => {
+  const newBlog = {
+    title: 'New Blog',
+    author: 'Kristopher Maxwell',
+    url: 'http://newblog.com',
+    likes: 2,
+  };
+
   test('successfully deletes the given blog and returns 204', async () => {
-    const { _id } = initialBlogs[0];
+    const blogResponse = await api
+      .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
+      .send(newBlog);
+
+    const blogId = blogResponse.body.id;
 
     await api
-      .delete(`/api/blogs/${_id.toString()}`)
+      .delete(`/api/blogs/${blogId}`)
+      .set('Authorization', `Bearer ${token}`)
       .expect(204);
 
     const response = await api.get('/api/blogs');
 
-    expect(response.body).toHaveLength(initialBlogs.length - 1);
+    expect(response.body).toHaveLength(initialBlogs.length);
   });
 
   test('if id is invalid, change nothing and respond with 204', async () => {
@@ -218,11 +270,25 @@ describe('HTTP DELETE /api/blogs/:id', () => {
 
     await api
       .delete(`/api/blogs/${falseId}`)
+      .set('Authorization', `Bearer ${token}`)
       .expect(204);
 
     const response = await api.get('/api/blogs');
 
     expect(response.body).toHaveLength(initialBlogs.length);
+  });
+
+  test('if a token is not provided, respond with 401 Unauthorized', async () => {
+    const blogResponse = await api
+      .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
+      .send(newBlog);
+
+    const blogId = blogResponse.body.id;
+
+    await api
+      .delete(`/api/blogs/${blogId}`)
+      .expect(401);
   });
 });
 

@@ -1,4 +1,3 @@
-const bcrypt = require('bcrypt');
 const usersRouter = require('express').Router();
 const User = require('../models/user');
 const { usernameValid, passwordValid } = require('../utils/users_helper');
@@ -14,12 +13,9 @@ usersRouter.post('/', async (request, response) => {
   const { username, password, name } = request.body;
 
   if (await usernameValid(username) && passwordValid(password)) {
-    const saltRounds = 10;
-    const passwordHash = await bcrypt.hash(password, saltRounds);
-
     const user = new User({
       username,
-      passwordHash,
+      password,
       name,
     });
 

@@ -8,12 +8,12 @@ const api = supertest(app);
 const initialUsers = [
   {
     username: 'kcmaxwell',
-    passwordHash: 'hunter2',
+    password: 'hunter2',
     name: 'Kristopher Maxwell',
   },
   {
     username: 'jdoe',
-    passwordHash: 'password123',
+    password: 'password123',
     name: 'John Doe',
   },
 ];
@@ -41,7 +41,7 @@ describe('HTTP GET /api/users', () => {
 });
 
 describe('HTTP POST /api/users', () => {
-  test('successfully creates a new blog post', async () => {
+  test('successfully creates a new user', async () => {
     const newUser = {
       username: 'newuser',
       password: 'password123',
@@ -55,14 +55,14 @@ describe('HTTP POST /api/users', () => {
       .expect('Content-Type', /application\/json/);
 
     const response = await api.get('/api/users');
-    const usersNoId = response.body.map((user) => {
-      const { id, ...obj } = user;
+    const users = response.body.map((user) => {
+      const { id, blogs, ...obj } = user;
       return obj;
     });
     delete newUser.password;
 
     expect(response.body).toHaveLength(initialUsers.length + 1);
-    expect(usersNoId).toContainEqual(newUser);
+    expect(users).toContainEqual(newUser);
   });
 
   test('when given an invalid username, returns 400', async () => {
